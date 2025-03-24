@@ -1,0 +1,57 @@
+# WiFi Cracker 开源项目
+
+## 项目概述
+
+WiFi Cracker 是一个开源的网络安全工具，旨在帮助网络管理员和安全研究人员测试 WiFi 网络的安全性。本项目严格用于教育目的和合法的网络安全测试。
+
+## 项目地址
+
+- **GitHub 仓库**: [https://github.com/mijaclan/WiFiCracker](https://github.com/mijaclan/WiFiCracker)
+- **问题追踪**: [https://github.com/mijaclan/WiFiCracker/issues](https://github.com/mijaclan/WiFiCracker/issues)
+
+## 技术栈
+
+- **前端框架**: Flutter
+- **编程语言**: Dart
+- **CI/CD**: GitHub Actions
+
+## 主要功能
+
+- WiFi 网络扫描与分析
+- 各种加密类型的破解支持
+- 字典管理与优化
+- 破解历史记录与统计
+- 自定义破解参数调整
+
+## 如何贡献
+
+我们欢迎社区贡献！如果您想参与项目开发，请遵循以下步骤：
+
+1. Fork 项目仓库
+2. 创建您的特性分支 (`git checkout -b feature/amazing-feature`)
+3. 提交您的更改 (`git commit -m 'Add some amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 开启一个 Pull Request
+
+## 贡献指南
+
+- 提交代码前，请确保通过所有测试
+- 新功能请附带相应的测试
+- 更新文档以反映任何更改
+- 遵循项目的代码风格和规范
+
+## 开源许可
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](https://github.com/mijaclan/WiFiCracker/main/LICENSE) 文件了解详情。
+
+## 致谢
+
+感谢所有为本项目做出贡献的开发者和测试人员！
+
+
+## 未来计划
+
+- 加入高级破解算法
+- 支持更多加密类型
+- 改进性能和电池优化
+- 添加云端同步功能 
