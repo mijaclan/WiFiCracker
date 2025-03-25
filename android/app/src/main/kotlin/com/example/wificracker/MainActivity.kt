@@ -5,6 +5,8 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import android.content.Intent
 import android.os.Build
+import android.app.ActivityManager
+import android.content.Context
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "com.example.wificracker/foreground_service"
@@ -28,10 +30,23 @@ class MainActivity: FlutterActivity() {
                     stopService(serviceIntent)
                     result.success(null)
                 }
+                "isServiceRunning" -> {
+                    result.success(isServiceRunning(ForegroundService::class.java))
+                }
                 else -> {
                     result.notImplemented()
                 }
             }
         }
+    }
+    
+    private fun isServiceRunning(serviceClass: Class<*>): Boolean {
+        val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        for (service in manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.name == service.service.className) {
+                return true
+            }
+        }
+        return false
     }
 } 

@@ -6,7 +6,6 @@ import 'resources/app_colors.dart';
 import 'resources/app_styles.dart';
 import 'resources/app_icons.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter/services.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -64,11 +63,18 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _checkStandbyRunStatus() async {
     try {
       if (Platform.isAndroid) {
-        // 检查 WakeLock 状态
-        final isEnabled = await WakelockPlus.enabled;
-        setState(() {
-          _standbyRun = isEnabled;
-        });
+        // 尝试通过前台服务状态检查
+        try {
+          final result = await platform.invokeMethod('isServiceRunning');
+          setState(() {
+            _standbyRun = result ?? false;
+          });
+        } catch (e) {
+          print('检查服务状态失败: $e');
+          setState(() {
+            _standbyRun = false;
+          });
+        }
       }
     } catch (e) {
       print('检查待机运行状态失败: $e');
@@ -172,12 +178,14 @@ class _SettingsPageState extends State<SettingsPage> {
             await platform.invokeMethod('startService');
           } catch (e) {
             print('启动前台服务失败: $e');
-            ToastUtil.show(context, "启动前台服务失败，但仍将尝试保持屏幕唤醒", ToastType.warning);
+            ToastUtil.show(context, "启动前台服务失败", ToastType.warning);
+            setState(() {
+              _standbyRunLoading = false;
+              _standbyRun = false;
+            });
+            return;
           }
         }
-
-        // 启用 Wakelock
-        await WakelockPlus.enable();
 
         setState(() {
           _standbyRun = true;
@@ -191,11 +199,9 @@ class _SettingsPageState extends State<SettingsPage> {
             await platform.invokeMethod('stopService');
           } catch (e) {
             print('停止前台服务失败: $e');
+            ToastUtil.show(context, "停止前台服务失败", ToastType.warning);
           }
         }
-
-        // 禁用 Wakelock
-        await WakelockPlus.disable();
 
         setState(() {
           _standbyRun = false;
