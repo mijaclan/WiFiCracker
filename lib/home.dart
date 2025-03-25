@@ -3,6 +3,7 @@ import 'models/wifi_model.dart';
 import 'utils/toast_util.dart';
 import 'utils/file_util.dart'; // 添加FileUtil导入
 import 'utils/wifi_util.dart'; // 添加WiFiUtil导入
+import 'utils/history_util.dart'; // 添加HistoryUtil导入
 import 'resources/app_colors.dart';
 import 'resources/app_styles.dart';
 import 'resources/app_icons.dart';
@@ -53,6 +54,8 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scanWifi();
       _initDefaultDictionary();
+      // 初始化历史记录文件
+      HistoryUtil.initHistoryFile();
       // 启动定时器，每5秒更新一次WiFi信号强度
       _startSignalUpdateTimer();
     });
@@ -400,13 +403,13 @@ class _HomePageState extends State<HomePage> {
         standard: network.standard,
       );
 
-      // 保存结果
-      final saved = await WiFiUtil.saveWiFiCrackResult(crackResult);
+      // 保存结果到历史记录
+      final saved = await HistoryUtil.saveToHistory(crackResult);
 
       if (saved) {
-        print('成功保存WiFi破解结果');
+        print('成功保存WiFi破解结果到历史记录');
       } else {
-        print('保存WiFi破解结果失败');
+        print('保存WiFi破解结果到历史记录失败');
       }
     } catch (e) {
       print('保存WiFi破解结果时出错: $e');
