@@ -3,10 +3,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:io';
 import 'models/wifi_model.dart';
 import 'utils/toast_util.dart';
+import 'utils/file_util.dart';
 import 'resources/app_colors.dart';
 import 'resources/app_styles.dart';
 import 'resources/app_icons.dart';
 import 'resources/app_images.dart';
+import 'package:file_picker/file_picker.dart';
 
 class DictionaryPage extends StatefulWidget {
   const DictionaryPage({super.key});
@@ -17,10 +19,19 @@ class DictionaryPage extends StatefulWidget {
 
 class _DictionaryPageState extends State<DictionaryPage> {
   String _dictionarySource = "https://dict.fluteer.com/repo";
-  String _dictionaryPath = "/storage/dictionaries";
+  late Future<String> _dictionaryPathFuture;
   bool _isConnecting = false;
   bool _isConnectionValid = false;
   bool _isLoading = false;
+  List<Dictionary> _localDictionaries = [];
+  bool _isLoadingLocalDictionaries = false;
+
+  // 添加刷新冷却时间控制
+  DateTime _lastLocalRefreshTime =
+      DateTime.now().subtract(const Duration(minutes: 1));
+  DateTime _lastRemoteRefreshTime =
+      DateTime.now().subtract(const Duration(minutes: 1));
+  static const Duration _refreshCooldown = Duration(seconds: 10); // 冷却时间为10秒
 
   // 模拟远程字典列表
   final List<Dictionary> _remoteDictionaries = [
@@ -41,24 +52,50 @@ class _DictionaryPageState extends State<DictionaryPage> {
     ),
   ];
 
-  // 模拟本地字典列表
-  final List<Dictionary> _localDictionaries = [
-    Dictionary(
-      name: "common_passwords.txt",
-      size: "3.2MB",
-      entries: "10,000",
-    ),
-    Dictionary(
-      name: "chinese_passwords.txt",
-      size: "5.8MB",
-      entries: "20,000",
-    ),
-    Dictionary(
-      name: "top_10k_routers.txt",
-      size: "1.2MB",
-      entries: "10,000",
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _dictionaryPathFuture = FileUtil.getDictionaryPath();
+    _loadLocalDictionaries();
+  }
+
+  // 加载本地字典列表
+  Future<void> _loadLocalDictionaries() async {
+    // 检查是否在冷却时间内
+    final now = DateTime.now();
+    if (now.difference(_lastLocalRefreshTime) < _refreshCooldown) {
+      ToastUtil.show(context, "请稍后再刷新", ToastType.warning);
+      return;
+    }
+
+    // 更新刷新时间
+    _lastLocalRefreshTime = now;
+
+    setState(() {
+      _isLoadingLocalDictionaries = true;
+    });
+
+    try {
+      final dictionaries = await FileUtil.getDictionaryFiles();
+
+      setState(() {
+        _localDictionaries = dictionaries
+            .map((dict) => Dictionary(
+                  name: dict['name'],
+                  size: dict['size'],
+                  entries: dict['entries'],
+                ))
+            .toList();
+        _isLoadingLocalDictionaries = false;
+      });
+    } catch (e) {
+      print('加载本地字典失败: $e');
+      setState(() {
+        _localDictionaries = [];
+        _isLoadingLocalDictionaries = false;
+      });
+    }
+  }
 
   void _selectDictionary(Dictionary dictionary) {
     setState(() {
@@ -81,13 +118,20 @@ class _DictionaryPageState extends State<DictionaryPage> {
             child: const Text("取消"),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              setState(() {
-                _localDictionaries
-                    .removeWhere((dict) => dict.name == dictionary.name);
-              });
-              ToastUtil.show(context, "已删除字典: ${dictionary.name}");
+              try {
+                final dictionaryPath = await FileUtil.getDictionaryPath();
+                final file = File('$dictionaryPath/${dictionary.name}');
+                if (await file.exists()) {
+                  await file.delete();
+                  await _loadLocalDictionaries(); // 重新加载列表
+                  ToastUtil.show(context, "已删除字典: ${dictionary.name}");
+                }
+              } catch (e) {
+                print('删除字典文件失败: $e');
+                ToastUtil.show(context, "删除字典失败", ToastType.error);
+              }
             },
             child: const Text("确认"),
           ),
@@ -131,19 +175,35 @@ class _DictionaryPageState extends State<DictionaryPage> {
     ToastUtil.show(context, "已保存字典下载源: $_dictionarySource");
   }
 
-  void _editDictionaryPath() {
-    // 在实际应用中，这里应该打开文件选择器
-    ToastUtil.show(context, "请选择字典保存路径");
-    // 模拟路径选择
-    Future.delayed(const Duration(seconds: 1), () {
-      setState(() {
-        _dictionaryPath = "/storage/emulated/0/Dictionaries";
-      });
-      ToastUtil.show(context, "已更新字典保存路径", ToastType.success);
-    });
+  // 编辑字典路径
+  Future<void> _editDictionaryPath() async {
+    try {
+      final result = await FilePicker.platform.getDirectoryPath();
+      if (result != null) {
+        await FileUtil.updateDictionaryPath(result);
+        setState(() {
+          _dictionaryPathFuture = FileUtil.getDictionaryPath();
+        });
+        await _loadLocalDictionaries(); // 重新加载字典列表
+        ToastUtil.show(context, "字典路径已更新，文件已移动到新位置", ToastType.success);
+      }
+    } catch (e) {
+      print('更改字典路径失败: $e');
+      ToastUtil.show(context, "更改字典路径失败: ${e.toString()}", ToastType.error);
+    }
   }
 
   void _refreshRemoteDictionaries() {
+    // 检查是否在冷却时间内
+    final now = DateTime.now();
+    if (now.difference(_lastRemoteRefreshTime) < _refreshCooldown) {
+      ToastUtil.show(context, "请稍后再刷新", ToastType.warning);
+      return;
+    }
+
+    // 更新刷新时间
+    _lastRemoteRefreshTime = now;
+
     setState(() {
       _isLoading = true;
     });
@@ -282,11 +342,7 @@ class _DictionaryPageState extends State<DictionaryPage> {
 
   Widget _buildDictionaryPathCard() {
     return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppStyles.cardBorderRadius,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -296,38 +352,55 @@ class _DictionaryPageState extends State<DictionaryPage> {
               children: [
                 Icon(AppIcons.folder, color: AppColors.primary),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   '字典路径',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: AppStyles.cardTitle,
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: TextEditingController(text: _dictionaryPath),
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
+            FutureBuilder<String>(
+              future: _dictionaryPathFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Text(
+                    '获取路径失败: ${snapshot.error}',
+                    style: TextStyle(color: AppColors.error),
+                  );
+                }
+
+                final path = snapshot.data ?? '';
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      path,
+                      style: AppStyles.cardSubtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: _editDictionaryPath,
-                  icon: Icon(AppIcons.edit),
-                  style: IconButton.styleFrom(
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  ),
-                ),
-              ],
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton.icon(
+                          onPressed: _editDictionaryPath,
+                          icon: Icon(AppIcons.folderOpen,
+                              color: AppColors.primary),
+                          label: Text(
+                            '更改路径',
+                            style: TextStyle(color: AppColors.primary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -470,17 +543,45 @@ class _DictionaryPageState extends State<DictionaryPage> {
               ),
             ),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(AppIcons.storage, color: AppColors.primary),
-                const SizedBox(width: 8),
-                const Text(
-                  '本地字典',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                Row(
+                  children: [
+                    Icon(AppIcons.storage, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    const Text(
+                      '本地字典',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  onPressed: _isLoadingLocalDictionaries
+                      ? null
+                      : _loadLocalDictionaries,
+                  icon: _isLoadingLocalDictionaries
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Icon(AppIcons.refresh),
+                  tooltip: '刷新',
                 ),
               ],
             ),
           ),
-          if (_localDictionaries.isNotEmpty)
+          if (_isLoadingLocalDictionaries)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else if (_localDictionaries.isNotEmpty)
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),

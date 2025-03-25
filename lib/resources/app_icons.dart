@@ -63,4 +63,7 @@ class AppIcons {
   static const IconData saveAuto = Icons.save_outlined;
   static const IconData update = Icons.system_update;
   static const IconData feedback = Icons.feedback;
+
+  // 添加文件夹打开图标
+  static const IconData folderOpen = Icons.folder_open;
 }

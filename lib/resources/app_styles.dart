@@ -26,6 +26,16 @@ class AppStyles {
     fontSize: 12,
   );
 
+  static const TextStyle cardTitle = TextStyle(
+    fontWeight: FontWeight.bold,
+    fontSize: 16,
+  );
+
+  static const TextStyle cardSubtitle = TextStyle(
+    fontSize: 14,
+    color: Colors.grey,
+  );
+
   // 卡片样式
   static final BoxDecoration cardDecoration = BoxDecoration(
     color: Colors.white,

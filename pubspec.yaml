@@ -71,10 +71,10 @@ flutter:
   assets:
     - lib/resources/assets/images/
     - lib/resources/support/
-    - lib/resources/dictionaries/passwords.txt
-    - lib/resources/dictionaries/other-0.txt
-    - lib/resources/dictionaries/other-1.txt
-    - lib/resources/dictionaries/other-2.txt
+    - lib/resources/LocalDictionaries/passwords.txt
+    - lib/resources/LocalDictionaries/other-0.txt
+    - lib/resources/LocalDictionaries/other-1.txt
+    - lib/resources/LocalDictionaries/other-2.txt
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
