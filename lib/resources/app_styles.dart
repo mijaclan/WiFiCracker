@@ -52,6 +52,7 @@ class AppStyles {
   // 按钮样式
   static final ButtonStyle primaryButtonStyle = ElevatedButton.styleFrom(
     foregroundColor: Colors.white,
+    backgroundColor: AppColors.primary,
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(8),

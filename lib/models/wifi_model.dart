@@ -3,29 +3,58 @@ class WiFiNetwork {
   final String encryption;
   int signal;
   bool isSelected;
-
-  // 添加新属性
-  final String? bssid; // MAC地址
-  final String? frequency; // 频率
-  final String? channel; // 信道
-  final String? standard; // WiFi标准(WiFi4/WiFi5/WiFi6)
-  final String? band; // 频段(2.4G/5G/6G)
-  String? password; // 连接密码
-  bool isConnected; // 是否已连接
+  bool isConnected;
+  String? password;
+  final String? bssid;
+  final String? frequency;
+  final String? channel;
+  final String? standard;
+  final String? band;
 
   WiFiNetwork({
     required this.name,
     required this.encryption,
     required this.signal,
     this.isSelected = false,
+    this.isConnected = false,
+    this.password,
     this.bssid,
     this.frequency,
     this.channel,
     this.standard,
     this.band,
-    this.password,
-    this.isConnected = false,
   });
+
+  // 从原生WiFi数据创建WiFiNetwork对象
+  factory WiFiNetwork.fromNative(dynamic network) {
+    String encryption = "Unknown";
+    String capabilities = network.capabilities ?? "";
+
+    if (capabilities.contains("WPA3")) {
+      encryption = "WPA3";
+    } else if (capabilities.contains("WPA2")) {
+      encryption = "WPA2";
+    } else if (capabilities.contains("WPA")) {
+      encryption = "WPA";
+    } else if (capabilities.contains("WEP")) {
+      encryption = "WEP";
+    } else if (capabilities == "[ESS]") {
+      encryption = "Open";
+    }
+
+    // 计算信号强度百分比
+    int level = network.level ?? -70;
+    int signalStrength = 100 + (level * 100) ~/ 100;
+    signalStrength = signalStrength.clamp(0, 100);
+
+    return WiFiNetwork(
+      name: network.ssid ?? "未知网络",
+      encryption: encryption,
+      signal: signalStrength,
+      bssid: network.bssid,
+      frequency: network.frequency?.toString(),
+    );
+  }
 
   factory WiFiNetwork.fromJson(Map<String, dynamic> json) {
     return WiFiNetwork(
@@ -33,13 +62,13 @@ class WiFiNetwork {
       encryption: json['encryption'] as String,
       signal: json['signal'] as int,
       isSelected: json['isSelected'] as bool? ?? false,
+      isConnected: json['isConnected'] as bool? ?? false,
+      password: json['password'] as String?,
       bssid: json['bssid'] as String?,
       frequency: json['frequency'] as String?,
       channel: json['channel'] as String?,
       standard: json['standard'] as String?,
       band: json['band'] as String?,
-      password: json['password'] as String?,
-      isConnected: json['isConnected'] as bool? ?? false,
     );
   }
 
@@ -49,13 +78,13 @@ class WiFiNetwork {
       'encryption': encryption,
       'signal': signal,
       'isSelected': isSelected,
+      'isConnected': isConnected,
+      'password': password,
       'bssid': bssid,
       'frequency': frequency,
       'channel': channel,
       'standard': standard,
       'band': band,
-      'password': password,
-      'isConnected': isConnected,
     };
   }
 }

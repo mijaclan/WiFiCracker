@@ -258,6 +258,8 @@ class _HomePageState extends State<HomePage> {
       // 更新状态
       setState(() {
         if (scannedNetworks.isNotEmpty) {
+          // 按信号强度排序（从强到弱）
+          scannedNetworks.sort((a, b) => b.signal.compareTo(a.signal));
           _wifiList = scannedNetworks;
 
           // 如果当前没有选中的WiFi，则选中第一个
@@ -709,10 +711,11 @@ class _HomePageState extends State<HomePage> {
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            Color.fromARGB(255, 226, 226, 226)),
                       ),
                     )
-                  : Icon(AppIcons.search),
+                  : Icon(AppIcons.search, color: Colors.white),
               label: Text(_isScanning ? '扫描中...' : '扫描WiFi'),
               style: AppStyles.primaryButtonStyle,
             ),
