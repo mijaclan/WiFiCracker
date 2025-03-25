@@ -5,6 +5,9 @@ import 'utils/toast_util.dart';
 import 'resources/app_colors.dart';
 import 'resources/app_styles.dart';
 import 'resources/app_icons.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:flutter/services.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -15,11 +18,16 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   // 基本设置
-  bool _standbyRun = true;
+  bool _standbyRun = false; // 初始状态为关闭
+  bool _standbyRunLoading = false; // 加载状态
   String _crackPriority = '平衡模式';
   bool _isDarkMode = false;
   bool _saveHistory = true;
   bool _enableAnimation = true;
+
+  // 平台通道
+  static const platform =
+      MethodChannel('com.example.wificracker/foreground_service');
 
   // 下载源设置
   String _dictionarySource = "https://dict.fluteer.com/repo";
@@ -47,6 +55,24 @@ class _SettingsPageState extends State<SettingsPage> {
 
     // 检查是否启用了邮件通知
     _updateEmailVisibility();
+
+    // 检查当前待机运行状态
+    _checkStandbyRunStatus();
+  }
+
+  // 检查当前待机运行状态
+  Future<void> _checkStandbyRunStatus() async {
+    try {
+      if (Platform.isAndroid) {
+        // 检查 WakeLock 状态
+        final isEnabled = await WakelockPlus.enabled;
+        setState(() {
+          _standbyRun = isEnabled;
+        });
+      }
+    } catch (e) {
+      print('检查待机运行状态失败: $e');
+    }
   }
 
   @override
@@ -116,14 +142,80 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  void _toggleStandbyRun(bool value) {
+  Future<void> _toggleStandbyRun(bool value) async {
+    // 设置加载状态
     setState(() {
-      _standbyRun = value;
+      _standbyRunLoading = true;
     });
-    ToastUtil.show(
-      context,
-      value ? "已启用待机运行" : "已禁用待机运行",
-    );
+
+    try {
+      if (value) {
+        // 只在Android平台请求权限
+        if (Platform.isAndroid) {
+          // 请求忽略电池优化
+          final status = await Permission.ignoreBatteryOptimizations.status;
+          if (!status.isGranted) {
+            final result =
+                await Permission.ignoreBatteryOptimizations.request();
+            if (!result.isGranted) {
+              ToastUtil.show(context, "需要电池优化权限以支持待机运行", ToastType.warning);
+              setState(() {
+                _standbyRunLoading = false;
+                _standbyRun = false;
+              });
+              return;
+            }
+          }
+
+          // 尝试启动前台服务
+          try {
+            await platform.invokeMethod('startService');
+          } catch (e) {
+            print('启动前台服务失败: $e');
+            ToastUtil.show(context, "启动前台服务失败，但仍将尝试保持屏幕唤醒", ToastType.warning);
+          }
+        }
+
+        // 启用 Wakelock
+        await WakelockPlus.enable();
+
+        setState(() {
+          _standbyRun = true;
+        });
+
+        ToastUtil.show(context, "已启用待机运行，应用将在后台持续工作", ToastType.success);
+      } else {
+        // 停止前台服务
+        if (Platform.isAndroid) {
+          try {
+            await platform.invokeMethod('stopService');
+          } catch (e) {
+            print('停止前台服务失败: $e');
+          }
+        }
+
+        // 禁用 Wakelock
+        await WakelockPlus.disable();
+
+        setState(() {
+          _standbyRun = false;
+        });
+
+        ToastUtil.show(context, "已禁用待机运行，应用在屏幕关闭后可能会停止工作", ToastType.success);
+      }
+    } catch (e) {
+      print('切换待机运行状态失败: $e');
+      ToastUtil.show(context, "切换待机运行状态失败: ${e.toString()}", ToastType.error);
+
+      // 恢复为原来的状态
+      setState(() {
+        _standbyRun = !value;
+      });
+    } finally {
+      setState(() {
+        _standbyRunLoading = false;
+      });
+    }
   }
 
   void _toggleDarkMode(bool value) {
@@ -268,12 +360,20 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           // 1. 性能设置
           _buildSectionTitle('性能设置', AppIcons.speed),
-          _buildToggleSettingItem(
+          _buildSettingItem(
             icon: AppIcons.standby,
             title: '待机运行',
             subtitle: '当屏幕关闭时继续运行',
-            value: _standbyRun,
-            onChanged: _toggleStandbyRun,
+            trailing: _standbyRunLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : Switch(
+                    value: _standbyRun,
+                    onChanged: _toggleStandbyRun,
+                    activeColor: Theme.of(context).colorScheme.primary,
+                  ),
           ),
           _buildDropdownSettingItem(
             icon: AppIcons.priority,
