@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'models/wifi_model.dart';
 import 'utils/toast_util.dart';
+import 'utils/file_util.dart'; // 添加FileUtil导入
+import 'utils/wifi_util.dart'; // 添加WiFiUtil导入
 import 'resources/app_colors.dart';
 import 'resources/app_styles.dart';
 import 'resources/app_icons.dart';
@@ -8,6 +10,8 @@ import 'main.dart'; // 导入main.dart以使用navigateToTab函数
 import './settings.dart';
 import 'package:wifi_iot/wifi_iot.dart'; // 导入WiFi管理包
 import 'dart:async'; // 导入异步支持
+import 'dart:io'; // 导入文件相关包
+import 'dart:convert'; // 导入JSON相关包
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,17 +24,21 @@ class _HomePageState extends State<HomePage> {
   bool _isCracking = false;
   bool _isLocked = false;
   bool _isScanning = false; // 添加扫描状态跟踪
+  bool _hasSelectedWifi = false; // 添加是否有选中WiFi的状态
 
   // 初始化为空列表，在应用启动后自动扫描
   List<WiFiNetwork> _wifiList = [];
 
+  // 定时器，用于定期更新WiFi信号强度
+  Timer? _signalUpdateTimer;
+
   CrackingStatus _crackingStatus = CrackingStatus(
     wifiName: "", // 初始为空，待扫描后设置
-    dictionaryName: "common_passwords.txt",
-    dictionarySize: "3.2MB",
-    estimatedTime: "2小时30分钟",
-    currentProgress: "第1582行/共10000行",
-    progressPercent: 0.45,
+    dictionaryName: "passwords.txt", // 默认使用passwords.txt字典
+    dictionarySize: "待加载",
+    estimatedTime: "未开始",
+    currentProgress: "未开始",
+    progressPercent: 0.0,
   );
 
   @override
@@ -42,7 +50,87 @@ class _HomePageState extends State<HomePage> {
     // 添加应用启动完成后的回调，自动扫描WiFi
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scanWifi();
+      _initDefaultDictionary();
+      // 启动定时器，每5秒更新一次WiFi信号强度
+      _startSignalUpdateTimer();
     });
+  }
+
+  @override
+  void dispose() {
+    // 取消定时器
+    _signalUpdateTimer?.cancel();
+    super.dispose();
+  }
+
+  // 启动WiFi信号强度更新定时器
+  void _startSignalUpdateTimer() {
+    _signalUpdateTimer?.cancel();
+    _signalUpdateTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _updateWifiSignalStrength();
+    });
+  }
+
+  // 更新WiFi信号强度
+  Future<void> _updateWifiSignalStrength() async {
+    if (_wifiList.isEmpty || _isScanning) {
+      return; // 如果列表为空或者正在扫描，不更新
+    }
+
+    try {
+      // 获取最新的WiFi列表
+      List<WifiNetwork> networks = await WiFiForIoTPlugin.loadWifiList();
+
+      // 更新现有WiFi列表的信号强度
+      setState(() {
+        for (var wifi in _wifiList) {
+          // 在新获取的网络列表中查找匹配的网络
+          for (var network in networks) {
+            if (network.ssid == wifi.name) {
+              // 更新信号强度
+              int level = network.level ?? -70; // 默认值，如果为null
+              int signalStrength = 100 + (level * 100) ~/ 100;
+              signalStrength = signalStrength.clamp(0, 100); // 确保在0-100范围内
+              wifi.signal = signalStrength;
+              break;
+            }
+          }
+        }
+      });
+    } catch (e) {
+      print('更新WiFi信号强度失败: $e');
+    }
+  }
+
+  // 初始化默认字典
+  Future<void> _initDefaultDictionary() async {
+    try {
+      final dictionaryPath = await FileUtil.getDictionaryPath();
+      final defaultDictFile = File('$dictionaryPath/passwords.txt');
+
+      if (await defaultDictFile.exists()) {
+        final fileSize = await defaultDictFile.length();
+        String sizeDisplay;
+        if (fileSize < 1024 * 1024) {
+          sizeDisplay = '${(fileSize / 1024).toStringAsFixed(1)}KB';
+        } else {
+          sizeDisplay = '${(fileSize / (1024 * 1024)).toStringAsFixed(1)}MB';
+        }
+
+        setState(() {
+          _crackingStatus = CrackingStatus(
+            wifiName: _crackingStatus.wifiName,
+            dictionaryName: "passwords.txt",
+            dictionarySize: sizeDisplay,
+            estimatedTime: "未开始",
+            currentProgress: "未开始",
+            progressPercent: 0.0,
+          );
+        });
+      }
+    } catch (e) {
+      print('初始化默认字典失败: $e');
+    }
   }
 
   // 检查WiFi权限
@@ -54,7 +142,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // 扫描附近WiFi
+  // 修改扫描WiFi方法以包含更多信息
   Future<void> _scanWifi() async {
     if (_isScanning) {
       ToastUtil.show(context, "正在扫描中，请稍候...");
@@ -114,6 +202,41 @@ class _HomePageState extends State<HomePage> {
         int signalStrength = 100 + (level * 100) ~/ 100;
         signalStrength = signalStrength.clamp(0, 100); // 确保在0-100范围内
 
+        // 处理频率信息
+        String? frequency = network.frequency?.toString();
+
+        // 确定WiFi标准和频段
+        String? band;
+        String? standard;
+        String? channel;
+
+        if (frequency != null) {
+          double freq = double.tryParse(frequency) ?? 0;
+
+          // 确定频段
+          if (freq > 5900) {
+            band = '6G';
+            standard = 'WiFi 6';
+          } else if (freq > 5000) {
+            band = '5G';
+            standard = 'WiFi 5';
+          } else if (freq > 2400) {
+            band = '2.4G';
+            standard = 'WiFi 4';
+          }
+
+          // 计算信道
+          if (freq >= 2412 && freq <= 2484) {
+            if (freq == 2484) {
+              channel = '14';
+            } else {
+              channel = ((freq - 2412) / 5 + 1).round().toString();
+            }
+          } else if (freq >= 5170 && freq <= 5825) {
+            channel = ((freq - 5170) / 5 + 34).round().toString();
+          }
+        }
+
         // 创建WiFi网络对象
         WiFiNetwork wifiNetwork = WiFiNetwork(
           name: network.ssid ?? "未知网络",
@@ -122,6 +245,11 @@ class _HomePageState extends State<HomePage> {
           isSelected: _wifiList.isEmpty
               ? true
               : (network.ssid ?? "") == _crackingStatus.wifiName,
+          bssid: network.bssid,
+          frequency: frequency,
+          channel: channel,
+          standard: standard,
+          band: band,
         );
 
         scannedNetworks.add(wifiNetwork);
@@ -146,6 +274,8 @@ class _HomePageState extends State<HomePage> {
               currentProgress: _crackingStatus.currentProgress,
               progressPercent: _crackingStatus.progressPercent,
             );
+
+            _hasSelectedWifi = true;
           }
         }
         _isScanning = false;
@@ -164,7 +294,127 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // 显示WiFi密码输入对话框
+  void _showPasswordDialog(WiFiNetwork network) {
+    if (network.encryption == "Open") {
+      // 如果是开放网络，直接尝试连接
+      _connectToWiFi(network, "");
+      return;
+    }
+
+    // 如果需要密码，显示输入对话框
+    final TextEditingController passwordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("连接到 ${network.name}"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("请输入WiFi密码", style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: passwordController,
+              decoration: InputDecoration(
+                hintText: '输入密码',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              obscureText: true,
+              enableSuggestions: false,
+              autocorrect: false,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("取消"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _connectToWiFi(network, passwordController.text);
+            },
+            child: const Text("连接"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 连接到WiFi
+  Future<void> _connectToWiFi(WiFiNetwork network, String password) async {
+    ToastUtil.show(context, "正在连接到 ${network.name}...");
+
+    try {
+      bool success = await WiFiUtil.connectToWiFi(network.name, password);
+
+      if (success) {
+        ToastUtil.show(context, "成功连接到 ${network.name}", ToastType.success);
+
+        // 更新网络状态
+        setState(() {
+          for (var wifi in _wifiList) {
+            wifi.isConnected = (wifi.name == network.name);
+            if (wifi.name == network.name) {
+              wifi.password = password;
+            }
+          }
+        });
+      } else {
+        ToastUtil.show(context, "连接失败，请检查密码", ToastType.error);
+      }
+    } catch (e) {
+      ToastUtil.show(context, "连接WiFi时出错: $e", ToastType.error);
+    }
+  }
+
+  // 当破解成功时保存结果
+  void _saveWiFiCrackResult(WiFiNetwork network, String password) async {
+    try {
+      // 创建破解结果对象
+      final crackResult = WiFiCrackResult(
+        ssid: network.name,
+        device: "Android设备", // 这里可以替换为实际设备信息
+        bssid: network.bssid,
+        channel: network.channel,
+        ap: "", // 目前没有AP信息
+        encryptionType: network.encryption,
+        password: password,
+        crackTime: DateTime.now(),
+        band: network.band,
+        standard: network.standard,
+      );
+
+      // 保存结果
+      final saved = await WiFiUtil.saveWiFiCrackResult(crackResult);
+
+      if (saved) {
+        print('成功保存WiFi破解结果');
+      } else {
+        print('保存WiFi破解结果失败');
+      }
+    } catch (e) {
+      print('保存WiFi破解结果时出错: $e');
+    }
+  }
+
   void _toggleCracking() {
+    if (!_hasSelectedWifi) {
+      ToastUtil.show(context, "请先选择一个WiFi网络", ToastType.warning);
+      return;
+    }
+
     setState(() {
       _isCracking = !_isCracking;
       if (_isCracking) {
@@ -200,7 +450,14 @@ class _HomePageState extends State<HomePage> {
             currentProgress: "完成",
           );
           _isCracking = false;
-          ToastUtil.show(context, "WiFi密码破解成功！", ToastType.success);
+          ToastUtil.show(context, "WiFi密码破解成功：123456", ToastType.success);
+
+          // 找到选中的WiFi网络
+          final selectedWiFi = _wifiList.firstWhere((wifi) => wifi.isSelected,
+              orElse: () => _wifiList.first);
+
+          // 保存破解结果
+          _saveWiFiCrackResult(selectedWiFi, "123456");
           return;
         }
 
@@ -249,6 +506,35 @@ class _HomePageState extends State<HomePage> {
         wifi.isSelected = wifi.name == network.name;
       }
 
+      // 清除破解状态但保留字典设置
+      _crackingStatus = CrackingStatus(
+        wifiName: network.name,
+        dictionaryName: _crackingStatus.dictionaryName,
+        dictionarySize: _crackingStatus.dictionarySize,
+        estimatedTime: "未开始",
+        currentProgress: "未开始",
+        progressPercent: 0.0,
+      );
+
+      _hasSelectedWifi = true; // 设置为已选中WiFi
+    });
+    ToastUtil.show(context, "已选择WiFi: ${network.name}");
+  }
+
+  // 开始破解WiFi
+  void _startCrackWifi(WiFiNetwork network) {
+    if (_isLocked && network.name != _crackingStatus.wifiName) {
+      ToastUtil.show(context, "当前WiFi已锁定，请先解锁", ToastType.warning);
+      return;
+    }
+
+    // 先选中该WiFi
+    setState(() {
+      for (var wifi in _wifiList) {
+        wifi.isSelected = wifi.name == network.name;
+      }
+
+      // 更新破解状态
       _crackingStatus = CrackingStatus(
         wifiName: network.name,
         dictionaryName: _crackingStatus.dictionaryName,
@@ -257,13 +543,114 @@ class _HomePageState extends State<HomePage> {
         currentProgress: "准备中...",
         progressPercent: 0.0,
       );
+
+      _hasSelectedWifi = true; // 设置为已选中WiFi
+
+      // 自动开始破解
+      _isCracking = true;
     });
-    ToastUtil.show(context, "已选择WiFi: ${network.name}");
+
+    ToastUtil.show(context, "开始破解WiFi: ${network.name}");
+    _startCrackingSimulation();
   }
 
+  // 修改选择字典的方法，弹出底部抽屉
   void _navigateToDictionary() {
-    // 弹出吐司选择字典
-    ToastUtil.show(context, "跳转到字典页面");
+    _showDictionariesBottomSheet();
+  }
+
+  // 显示字典选择底部抽屉
+  void _showDictionariesBottomSheet() async {
+    try {
+      final dictionaries = await FileUtil.getDictionaryFiles();
+
+      if (dictionaries.isEmpty) {
+        ToastUtil.show(context, "未找到字典文件", ToastType.warning);
+        return;
+      }
+
+      showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (context) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(AppIcons.book, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    const Text(
+                      '选择字典',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Divider(),
+                Expanded(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: dictionaries.length,
+                    itemBuilder: (context, index) {
+                      final dict = dictionaries[index];
+                      final isSelected =
+                          dict['name'] == _crackingStatus.dictionaryName;
+
+                      return ListTile(
+                        leading: Icon(
+                          AppIcons.description,
+                          color:
+                              isSelected ? AppColors.primary : AppColors.gray,
+                        ),
+                        title: Text(dict['name']),
+                        subtitle: Row(
+                          children: [
+                            Text(dict['size']),
+                            const SizedBox(width: 8),
+                            Text('${dict['entries']}条'),
+                          ],
+                        ),
+                        trailing: isSelected
+                            ? Icon(Icons.check_circle, color: AppColors.primary)
+                            : null,
+                        selected: isSelected,
+                        onTap: () {
+                          setState(() {
+                            _crackingStatus = CrackingStatus(
+                              wifiName: _crackingStatus.wifiName,
+                              dictionaryName: dict['name'],
+                              dictionarySize: dict['size'],
+                              estimatedTime: _crackingStatus.estimatedTime,
+                              currentProgress: _crackingStatus.currentProgress,
+                              progressPercent: _crackingStatus.progressPercent,
+                            );
+                          });
+                          Navigator.pop(context);
+                          ToastUtil.show(context, "已选择字典: ${dict['name']}",
+                              ToastType.success);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      print('加载字典文件失败: $e');
+      ToastUtil.show(context, "加载字典文件失败", ToastType.error);
+    }
   }
 
   void _navigateToSettings(BuildContext context) {
@@ -280,7 +667,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             Icon(AppIcons.wifi, color: Colors.white),
             const SizedBox(width: 8),
-            const Text('Fluteer WiFi', style: TextStyle(color: Colors.white)),
+            const Text('WiFi Cracker', style: TextStyle(color: Colors.white)),
           ],
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
@@ -369,10 +756,14 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
                 IconButton(
-                  onPressed: _toggleLock,
+                  onPressed: _hasSelectedWifi ? _toggleLock : null,
                   icon: Icon(
                     _isLocked ? Icons.lock : Icons.lock_open,
-                    color: _isLocked ? AppColors.wpa2 : AppColors.gray,
+                    color: _isLocked
+                        ? AppColors.wpa2
+                        : (_hasSelectedWifi
+                            ? AppColors.gray
+                            : Colors.grey.withOpacity(0.3)),
                   ),
                   tooltip: _isLocked ? '解锁' : '锁定',
                 ),
@@ -402,7 +793,14 @@ class _HomePageState extends State<HomePage> {
                                 text: 'WiFi名称: ',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
-                              TextSpan(text: _crackingStatus.wifiName),
+                              TextSpan(
+                                text: _hasSelectedWifi
+                                    ? _crackingStatus.wifiName
+                                    : "未选择WiFi设备",
+                                style: _hasSelectedWifi
+                                    ? null
+                                    : TextStyle(color: AppColors.gray),
+                              ),
                             ],
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -458,7 +856,14 @@ class _HomePageState extends State<HomePage> {
                           text: '预计剩余时间: ',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        TextSpan(text: _crackingStatus.estimatedTime),
+                        TextSpan(
+                          text: _hasSelectedWifi
+                              ? _crackingStatus.estimatedTime
+                              : "未选择WiFi设备",
+                          style: _hasSelectedWifi
+                              ? null
+                              : TextStyle(color: AppColors.gray),
+                        ),
                       ],
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -472,7 +877,14 @@ class _HomePageState extends State<HomePage> {
                           text: '当前进度: ',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        TextSpan(text: _crackingStatus.currentProgress),
+                        TextSpan(
+                          text: _hasSelectedWifi
+                              ? _crackingStatus.currentProgress
+                              : "未选择WiFi设备",
+                          style: _hasSelectedWifi
+                              ? null
+                              : TextStyle(color: AppColors.gray),
+                        ),
                       ],
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -499,11 +911,16 @@ class _HomePageState extends State<HomePage> {
                       alignment: WrapAlignment.center,
                       children: [
                         ElevatedButton.icon(
-                          onPressed: _toggleCracking,
+                          onPressed: _hasSelectedWifi ? _toggleCracking : null,
                           icon: Icon(
                               _isCracking ? AppIcons.pause : AppIcons.play),
                           label: Text(_isCracking ? '暂停' : '开始'),
-                          style: AppStyles.successButtonStyle,
+                          style: _hasSelectedWifi
+                              ? AppStyles.successButtonStyle
+                              : ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey.withOpacity(0.3),
+                                  foregroundColor: Colors.white,
+                                ),
                         ),
                         OutlinedButton.icon(
                           onPressed: _navigateToDictionary,
@@ -594,6 +1011,107 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildWifiItem(WiFiNetwork wifi) {
+    // 构建WiFi信息标签
+    List<Widget> infoTags = [];
+
+    // 加密类型标签
+    infoTags.add(
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+        decoration: BoxDecoration(
+          color: _getEncryptionColor(wifi.encryption).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          wifi.encryption,
+          style: TextStyle(
+            color: _getEncryptionColor(wifi.encryption),
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
+
+    // 如果有频段信息，添加频段标签
+    if (wifi.band != null) {
+      infoTags.add(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            wifi.band!,
+            style: const TextStyle(
+              color: Colors.blue,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 如果有WiFi标准信息，添加标准标签
+    if (wifi.standard != null) {
+      infoTags.add(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+          decoration: BoxDecoration(
+            color: Colors.purple.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            wifi.standard!,
+            style: const TextStyle(
+              color: Colors.purple,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 如果有信道信息，添加信道标签
+    if (wifi.channel != null) {
+      infoTags.add(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+          decoration: BoxDecoration(
+            color: Colors.orange.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            "CH${wifi.channel}",
+            style: const TextStyle(
+              color: Colors.orange,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 如果已连接，添加已连接标签
+    if (wifi.isConnected) {
+      infoTags.add(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: const Text(
+            "已连接",
+            style: TextStyle(
+              color: Colors.green,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Card(
       elevation: 0,
       color:
@@ -612,47 +1130,90 @@ class _HomePageState extends State<HomePage> {
         borderRadius: AppStyles.itemBorderRadius,
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      wifi.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                      overflow: TextOverflow.ellipsis,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          wifi.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (wifi.bssid != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              wifi.bssid!,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                    const SizedBox(height: 5),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: _getEncryptionColor(wifi.encryption)
-                            .withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            AppIcons.signal,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text('${wifi.signal}%'),
+                        ],
                       ),
-                      child: Text(
-                        wifi.encryption,
-                        style: TextStyle(
-                          color: _getEncryptionColor(wifi.encryption),
-                          fontSize: 12,
+                      const SizedBox(width: 8),
+                      // 添加破解按钮
+                      ElevatedButton.icon(
+                        onPressed: () => _startCrackWifi(wifi),
+                        icon: Icon(AppIcons.key, size: 16),
+                        label: const Text('破解'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          minimumSize: const Size(20, 32),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    AppIcons.signal,
-                    color: Theme.of(context).colorScheme.primary,
+                    ],
                   ),
-                  const SizedBox(width: 4),
-                  Text('${wifi.signal}%'),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: infoTags,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => _showPasswordDialog(wifi),
+                    icon: Icon(
+                      Icons.wifi_password,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    label: const Text('连接'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: const Size(20, 32),
+                    ),
+                  ),
                 ],
               ),
             ],

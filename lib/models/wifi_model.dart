@@ -1,14 +1,30 @@
 class WiFiNetwork {
   final String name;
   final String encryption;
-  final int signal;
+  int signal;
   bool isSelected;
+
+  // 添加新属性
+  final String? bssid; // MAC地址
+  final String? frequency; // 频率
+  final String? channel; // 信道
+  final String? standard; // WiFi标准(WiFi4/WiFi5/WiFi6)
+  final String? band; // 频段(2.4G/5G/6G)
+  String? password; // 连接密码
+  bool isConnected; // 是否已连接
 
   WiFiNetwork({
     required this.name,
     required this.encryption,
     required this.signal,
     this.isSelected = false,
+    this.bssid,
+    this.frequency,
+    this.channel,
+    this.standard,
+    this.band,
+    this.password,
+    this.isConnected = false,
   });
 
   factory WiFiNetwork.fromJson(Map<String, dynamic> json) {
@@ -17,6 +33,13 @@ class WiFiNetwork {
       encryption: json['encryption'] as String,
       signal: json['signal'] as int,
       isSelected: json['isSelected'] as bool? ?? false,
+      bssid: json['bssid'] as String?,
+      frequency: json['frequency'] as String?,
+      channel: json['channel'] as String?,
+      standard: json['standard'] as String?,
+      band: json['band'] as String?,
+      password: json['password'] as String?,
+      isConnected: json['isConnected'] as bool? ?? false,
     );
   }
 
@@ -26,6 +49,13 @@ class WiFiNetwork {
       'encryption': encryption,
       'signal': signal,
       'isSelected': isSelected,
+      'bssid': bssid,
+      'frequency': frequency,
+      'channel': channel,
+      'standard': standard,
+      'band': band,
+      'password': password,
+      'isConnected': isConnected,
     };
   }
 }
@@ -114,4 +144,61 @@ class Dictionary {
       'selected': selected,
     };
   }
-} 
+}
+
+// 添加WiFi破解结果记录类
+class WiFiCrackResult {
+  final String ssid; // WiFi名称
+  final String? device; // WiFi设备
+  final String? bssid; // MAC地址
+  final String? channel; // 信道
+  final String? ap; // AP
+  final String encryptionType; // 密码类型
+  final String password; // 破解的密码
+  final DateTime crackTime; // 破解时间
+  final String? band; // 频段
+  final String? standard; // WiFi标准
+
+  WiFiCrackResult({
+    required this.ssid,
+    this.device,
+    this.bssid,
+    this.channel,
+    this.ap,
+    required this.encryptionType,
+    required this.password,
+    required this.crackTime,
+    this.band,
+    this.standard,
+  });
+
+  factory WiFiCrackResult.fromJson(Map<String, dynamic> json) {
+    return WiFiCrackResult(
+      ssid: json['ssid'] as String,
+      device: json['device'] as String?,
+      bssid: json['bssid'] as String?,
+      channel: json['channel'] as String?,
+      ap: json['ap'] as String?,
+      encryptionType: json['encryptionType'] as String,
+      password: json['password'] as String,
+      crackTime: DateTime.parse(json['crackTime'] as String),
+      band: json['band'] as String?,
+      standard: json['standard'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ssid': ssid,
+      'device': device,
+      'bssid': bssid,
+      'channel': channel,
+      'ap': ap,
+      'encryptionType': encryptionType,
+      'password': password,
+      'crackTime': crackTime.toIso8601String(),
+      'band': band,
+      'standard': standard,
+    };
+  }
+}
