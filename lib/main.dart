@@ -5,6 +5,14 @@ import 'history.dart';
 import 'settings.dart';
 import 'resources/app_colors.dart';
 
+// 全局key，用于访问MainScreen的状态
+final GlobalKey<_MainScreenState> mainScreenKey = GlobalKey<_MainScreenState>();
+
+// 全局方法，用于切换底部导航栏
+void navigateToTab(int index) {
+  mainScreenKey.currentState?.setCurrentIndex(index);
+}
+
 void main() {
   runApp(const MyApp());
 }
@@ -26,7 +34,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: AppColors.scaffoldBackground,
       ),
-      home: const MainScreen(),
+      home: MainScreen(key: mainScreenKey),
     );
   }
 }
@@ -47,6 +55,13 @@ class _MainScreenState extends State<MainScreen> {
     const HistoryPage(),
     const SettingsPage(),
   ];
+
+  // 提供一个公共方法来设置当前索引
+  void setCurrentIndex(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
