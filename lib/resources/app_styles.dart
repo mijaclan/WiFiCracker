@@ -42,7 +42,7 @@ class AppStyles {
     borderRadius: itemBorderRadius,
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.05),
+        color: Colors.black.withValues(red: 0, green: 0, blue: 0, alpha: 0.05),
         blurRadius: 10,
         offset: const Offset(0, 2),
       ),
@@ -87,7 +87,12 @@ class AppStyles {
   static final InputDecoration searchInputDecoration = InputDecoration(
     hintText: '搜索...',
     filled: true,
-    fillColor: Colors.grey.withOpacity(0.1),
+    fillColor: Colors.grey.withValues(
+      red: Colors.grey.r.toDouble(),
+      green: Colors.grey.g.toDouble(),
+      blue: Colors.grey.b.toDouble(),
+      alpha: 0.1,
+    ),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
       borderSide: BorderSide.none,

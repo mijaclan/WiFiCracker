@@ -10,7 +10,7 @@ import '../../resources/app_icons.dart';
 import '../../resources/app_images.dart';
 import '../../widgets/app_logo.dart';
 import '../../main.dart';
-import '../settings/settings.dart';
+import '../settings/settings_page.dart';
 import 'package:wifi_iot/wifi_iot.dart';
 import 'dart:async';
 import 'dart:io';
@@ -86,6 +86,7 @@ class _HomePageState extends State<HomePage> {
 
     try {
       // 获取最新的WiFi列表
+      // ignore: deprecated_member_use
       List<WifiNetwork> networks = await WiFiForIoTPlugin.loadWifiList();
 
       // 更新现有WiFi列表的信号强度
@@ -177,6 +178,7 @@ class _HomePageState extends State<HomePage> {
       }
 
       // 由于wifi_iot没有直接的startScan方法，我们直接获取WiFi列表
+      // ignore: deprecated_member_use
       List<WifiNetwork> networks = await WiFiForIoTPlugin.loadWifiList();
 
       // 将原生WiFi列表转换为我们自定义的数据格式
@@ -757,11 +759,22 @@ class _HomePageState extends State<HomePage> {
   Widget _buildControlPanel() {
     return Card(
       elevation: 0,
-      color: Colors.white.withOpacity(0.8),
+      color: Colors.white.withValues(
+        red: Colors.white.r.toDouble(),
+        green: Colors.white.g.toDouble(),
+        blue: Colors.white.b.toDouble(),
+        alpha: 0.8,
+      ),
       margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(
         borderRadius: AppStyles.cardBorderRadius,
-        side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+        side: BorderSide(
+            color: Colors.grey.withValues(
+          red: Colors.grey.r.toDouble(),
+          green: Colors.grey.g.toDouble(),
+          blue: Colors.grey.b.toDouble(),
+          alpha: 0.1,
+        )),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -798,11 +811,22 @@ class _HomePageState extends State<HomePage> {
   Widget _buildCrackingStatus() {
     return Card(
       elevation: 0,
-      color: Colors.white.withOpacity(0.8),
+      color: Colors.white.withValues(
+        red: Colors.white.r.toDouble(),
+        green: Colors.white.g.toDouble(),
+        blue: Colors.white.b.toDouble(),
+        alpha: 0.8,
+      ),
       margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(
         borderRadius: AppStyles.cardBorderRadius,
-        side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+        side: BorderSide(
+            color: Colors.grey.withValues(
+          red: Colors.grey.r.toDouble(),
+          green: Colors.grey.g.toDouble(),
+          blue: Colors.grey.b.toDouble(),
+          alpha: 0.1,
+        )),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -831,7 +855,12 @@ class _HomePageState extends State<HomePage> {
                         ? AppColors.wpa2
                         : (_hasSelectedWifi
                             ? AppColors.gray
-                            : Colors.grey.withOpacity(0.3)),
+                            : Colors.grey.withValues(
+                                red: Colors.grey.r.toDouble(),
+                                green: Colors.grey.g.toDouble(),
+                                blue: Colors.grey.b.toDouble(),
+                                alpha: 0.1,
+                              )),
                   ),
                   tooltip: _isLocked ? '解锁' : '锁定',
                 ),
@@ -841,7 +870,8 @@ class _HomePageState extends State<HomePage> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.05),
+                color: AppColors.primary
+                    .withValues(red: 0, green: 0, blue: 0, alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
                 border: Border(
                   left: BorderSide(color: AppColors.primary, width: 4),
@@ -984,7 +1014,12 @@ class _HomePageState extends State<HomePage> {
                     child: LinearProgressIndicator(
                       value: _crackingStatus.progressPercent,
                       minHeight: 8,
-                      backgroundColor: Colors.grey.withOpacity(0.1),
+                      backgroundColor: Colors.grey.withValues(
+                        red: Colors.grey.r.toDouble(),
+                        green: Colors.grey.g.toDouble(),
+                        blue: Colors.grey.b.toDouble(),
+                        alpha: 0.1,
+                      ),
                       valueColor: AlwaysStoppedAnimation<Color>(
                           Theme.of(context).colorScheme.primary),
                     ),
@@ -1007,7 +1042,12 @@ class _HomePageState extends State<HomePage> {
                           style: _hasSelectedWifi
                               ? AppStyles.successButtonStyle
                               : ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey.withOpacity(0.3),
+                                  backgroundColor: Colors.grey.withValues(
+                                    red: Colors.grey.r.toDouble(),
+                                    green: Colors.grey.g.toDouble(),
+                                    blue: Colors.grey.b.toDouble(),
+                                    alpha: 0.3,
+                                  ),
                                   foregroundColor: Colors.white,
                                 ),
                         ),
@@ -1040,14 +1080,24 @@ class _HomePageState extends State<HomePage> {
               Icon(
                 AppIcons.router,
                 size: 48,
-                color: Colors.grey.withOpacity(0.5),
+                color: Colors.grey.withValues(
+                  red: Colors.grey.r.toDouble(),
+                  green: Colors.grey.g.toDouble(),
+                  blue: Colors.grey.b.toDouble(),
+                  alpha: 0.5,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
                 '没有发现WiFi网络',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.grey.withOpacity(0.8),
+                  color: Colors.grey.withValues(
+                    red: Colors.grey.r.toDouble(),
+                    green: Colors.grey.g.toDouble(),
+                    blue: Colors.grey.b.toDouble(),
+                    alpha: 0.8,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1108,7 +1158,12 @@ class _HomePageState extends State<HomePage> {
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
         decoration: BoxDecoration(
-          color: _getEncryptionColor(wifi.encryption).withOpacity(0.1),
+          color: _getEncryptionColor(wifi.encryption).withValues(
+            red: _getEncryptionColor(wifi.encryption).r.toDouble(),
+            green: _getEncryptionColor(wifi.encryption).g.toDouble(),
+            blue: _getEncryptionColor(wifi.encryption).b.toDouble(),
+            alpha: 0.1,
+          ),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Text(
@@ -1127,7 +1182,12 @@ class _HomePageState extends State<HomePage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
+            color: Colors.blue.withValues(
+              red: Colors.blue.r.toDouble(),
+              green: Colors.blue.g.toDouble(),
+              blue: Colors.blue.b.toDouble(),
+              alpha: 0.1,
+            ),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
@@ -1147,7 +1207,12 @@ class _HomePageState extends State<HomePage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
           decoration: BoxDecoration(
-            color: Colors.purple.withOpacity(0.1),
+            color: Colors.purple.withValues(
+              red: Colors.purple.r.toDouble(),
+              green: Colors.purple.g.toDouble(),
+              blue: Colors.purple.b.toDouble(),
+              alpha: 0.1,
+            ),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
@@ -1167,7 +1232,12 @@ class _HomePageState extends State<HomePage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
           decoration: BoxDecoration(
-            color: Colors.orange.withOpacity(0.1),
+            color: Colors.orange.withValues(
+              red: Colors.orange.r.toDouble(),
+              green: Colors.orange.g.toDouble(),
+              blue: Colors.orange.b.toDouble(),
+              alpha: 0.1,
+            ),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
@@ -1187,7 +1257,12 @@ class _HomePageState extends State<HomePage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
           decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.1),
+            color: Colors.green.withValues(
+              red: Colors.green.r.toDouble(),
+              green: Colors.green.g.toDouble(),
+              blue: Colors.green.b.toDouble(),
+              alpha: 0.1,
+            ),
             borderRadius: BorderRadius.circular(6),
           ),
           child: const Text(
@@ -1203,15 +1278,22 @@ class _HomePageState extends State<HomePage> {
 
     return Card(
       elevation: 0,
-      color:
-          wifi.isSelected ? AppColors.primary.withOpacity(0.05) : Colors.white,
+      color: Colors.white.withValues(
+        red: Colors.white.r.toDouble(),
+        green: Colors.white.g.toDouble(),
+        blue: Colors.white.b.toDouble(),
+        alpha: 0.8,
+      ),
       margin: const EdgeInsets.only(bottom: 8),
       shape: RoundedRectangleBorder(
         borderRadius: AppStyles.itemBorderRadius,
         side: BorderSide(
-          color: wifi.isSelected
-              ? AppColors.primary
-              : Colors.grey.withOpacity(0.1),
+          color: Colors.grey.withValues(
+            red: Colors.grey.r.toDouble(),
+            green: Colors.grey.g.toDouble(),
+            blue: Colors.grey.b.toDouble(),
+            alpha: 0.1,
+          ),
         ),
       ),
       child: InkWell(

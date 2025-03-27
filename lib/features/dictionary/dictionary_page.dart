@@ -318,7 +318,24 @@ class _DictionaryPageState extends State<DictionaryPage> {
                   label: Text(_isConnecting ? '验证中...' : '验证连接'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        Theme.of(context).colorScheme.primary.withValues(
+                              red: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .r
+                                  .toDouble(),
+                              green: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .g
+                                  .toDouble(),
+                              blue: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .b
+                                  .toDouble(),
+                              alpha: 0.1,
+                            ),
                     foregroundColor: Theme.of(context).colorScheme.primary,
                   ),
                 ),
@@ -328,7 +345,24 @@ class _DictionaryPageState extends State<DictionaryPage> {
                   label: const Text('保存设置'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        Theme.of(context).colorScheme.primary.withValues(
+                              red: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .r
+                                  .toDouble(),
+                              green: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .g
+                                  .toDouble(),
+                              blue: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .b
+                                  .toDouble(),
+                              alpha: 0.1,
+                            ),
                     foregroundColor: Theme.of(context).colorScheme.primary,
                   ),
                 ),
@@ -420,7 +454,8 @@ class _DictionaryPageState extends State<DictionaryPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.05),
+              color: AppColors.primary
+                  .withValues(red: 0, green: 0, blue: 0, alpha: 0.05),
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(AppStyles.cardBorderRadius.topLeft.x),
                 topRight:
@@ -535,7 +570,8 @@ class _DictionaryPageState extends State<DictionaryPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.05),
+              color: AppColors.primary
+                  .withValues(red: 0, green: 0, blue: 0, alpha: 0.05),
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(AppStyles.cardBorderRadius.topLeft.x),
                 topRight:
@@ -628,7 +664,12 @@ class _DictionaryPageState extends State<DictionaryPage> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withValues(
+                    red: Theme.of(context).colorScheme.primary.r.toDouble(),
+                    green: Theme.of(context).colorScheme.primary.g.toDouble(),
+                    blue: Theme.of(context).colorScheme.primary.b.toDouble(),
+                    alpha: 0.1,
+                  ),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(

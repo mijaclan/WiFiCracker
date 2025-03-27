@@ -1,14 +1,7 @@
-# This file configures the analyzer, which statically analyzes Dart code to
-# check for errors, warnings, and lints.
-#
-# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
-# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
-# invoked from the command line by running `flutter analyze`.
-
-# The following line activates a set of recommended lints for Flutter apps,
-# packages, and plugins designed to encourage good coding practices.
+# 启用推荐的 Lint 规则集
 include: package:flutter_lints/flutter.yaml
 
+# 自定义 Lint 规则（Airbnb 风格）
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
@@ -21,8 +14,81 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    # 强制类型声明
+    always_declare_return_types: true
+    always_specify_types: true
 
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+    # 提高代码可读性
+    avoid_empty_else: true
+    avoid_init_to_null: true
+    avoid_print: true # 使用日志工具代替 print
+    avoid_relative_lib_imports: true
+    avoid_renaming_method_parameters: true
+    avoid_shadowing_type_parameters: true
+    avoid_single_cascade_in_expression_statements: true
+    avoid_types_as_parameter_names: true
+    camel_case_extensions: true
+    curly_braces_in_flow_control_structures: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    prefer_final_fields: true
+    prefer_final_locals: true
+    prefer_is_empty: true
+    prefer_spread_collections: true
+    slash_for_doc_comments: true
+    sized_box_for_whitespace: true
+    sort_child_properties_last: true
+    type_annotate_public_apis: true
+    unawaited_futures: true
+    unnecessary_this: true
+    use_function_type_syntax_for_parameters: true
+    use_rethrow_when_possible: true
+
+    # 禁止未使用的代码
+    avoid_unused_constructor_parameters: true
+    unused_element: warning
+    unused_import: warning
+    unused_local_variable: warning
+
+    # 性能优化
+    prefer_collection_literals: true
+    prefer_conditional_assignment: true
+    prefer_equal_for_default_values: true
+    prefer_if_null_operators: true
+
+    # 错误预防
+    await_only_futures: true
+    hash_and_equals: true
+    no_adjacent_strings_in_list: true
+    no_duplicate_case_values: true
+    null_closures: true
+    recursive_getters: true
+    valid_regexps: true
+
+# 强制执行严格的类型检查
+analyzer:
+  strong-mode:
+    implicit-casts: false # 禁止隐式类型转换
+    implicit-dynamic: false # 禁止隐式动态类型
+
+  errors:
+    # 将某些警告提升为错误
+    deprecated_member_use: error
+    invalid_annotation_target: error
+    missing_required_param: error
+    missing_return: error
+    override_on_non_overriding_member: error
+
+  exclude:
+    - "**/*.g.dart" # 忽略生成的文件
+    - "**/*.freezed.dart"
+    - "**/*.gr.dart"
+
+# 如果需要针对特定文件或目录进行更细粒度的控制
+overrides:
+  analyzer:
+    errors:
+      # 对于测试文件放宽某些规则
+      avoid_print: false # 允许在测试文件中使用 print
+    exclude:
+      - "test/**" # 排除所有测试文件

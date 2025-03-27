@@ -214,7 +214,12 @@ class _HistoryPageState extends State<HistoryPage> {
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: Colors.grey.withOpacity(0.1),
+          fillColor: Colors.grey.withValues(
+            red: Colors.grey.r.toDouble(),
+            green: Colors.grey.g.toDouble(),
+            blue: Colors.grey.b.toDouble(),
+            alpha: 0.1,
+          ),
           contentPadding: const EdgeInsets.symmetric(vertical: 0),
         ),
       ),
@@ -224,7 +229,12 @@ class _HistoryPageState extends State<HistoryPage> {
   Widget _buildSelectionBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+      color: Theme.of(context).colorScheme.primary.withValues(
+            red: Theme.of(context).colorScheme.primary.r.toDouble(),
+            green: Theme.of(context).colorScheme.primary.g.toDouble(),
+            blue: Theme.of(context).colorScheme.primary.b.toDouble(),
+            alpha: 0.1,
+          ),
       child: Row(
         children: [
           Text(
@@ -297,7 +307,12 @@ class _HistoryPageState extends State<HistoryPage> {
         side: BorderSide(
           color: isSelected
               ? Theme.of(context).colorScheme.primary
-              : Colors.grey.withOpacity(0.1),
+              : Colors.grey.withValues(
+                  red: Colors.grey.r.toDouble(),
+                  green: Colors.grey.g.toDouble(),
+                  blue: Colors.grey.b.toDouble(),
+                  alpha: 0.1,
+                ),
           width: isSelected ? 2 : 1,
         ),
       ),
@@ -334,10 +349,24 @@ class _HistoryPageState extends State<HistoryPage> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.1),
+                      color: Theme.of(context).colorScheme.primary.withValues(
+                            red: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .r
+                                .toDouble(),
+                            green: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .g
+                                .toDouble(),
+                            blue: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .b
+                                .toDouble(),
+                            alpha: 0.1,
+                          ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -386,7 +415,24 @@ class _HistoryPageState extends State<HistoryPage> {
                     icon: null,
                     label: history.encryptionType,
                     backgroundColor:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        Theme.of(context).colorScheme.primary.withValues(
+                              red: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .r
+                                  .toDouble(),
+                              green: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .g
+                                  .toDouble(),
+                              blue: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .b
+                                  .toDouble(),
+                              alpha: 0.1,
+                            ),
                     textColor: Theme.of(context).colorScheme.primary,
                   ),
                   _buildInfoChip(
@@ -444,7 +490,13 @@ class _HistoryPageState extends State<HistoryPage> {
         vertical: 2,
       ),
       decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.grey.withOpacity(0.1),
+        color: backgroundColor ??
+            Colors.grey.withValues(
+              red: Colors.grey.r.toDouble(),
+              green: Colors.grey.g.toDouble(),
+              blue: Colors.grey.b.toDouble(),
+              alpha: 0.1,
+            ),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(

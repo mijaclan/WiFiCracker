@@ -192,6 +192,7 @@ class WiFiUtil {
   static Future<List<WiFiNetwork>> _scanWifi() async {
     try {
       // 获取扫描结果
+      // ignore: deprecated_member_use
       final List<WifiNetwork> networks = await WiFiForIoTPlugin.loadWifiList();
 
       // 转换为自定义WiFi模型并排序

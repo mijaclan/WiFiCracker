@@ -20,7 +20,8 @@ class AppColors {
 
   // 卡片颜色
   static Color cardBackground = Colors.white;
-  static Color cardShadow = Colors.black.withOpacity(0.05);
+  static Color cardShadow =
+      Colors.black.withValues(red: 0, green: 0, blue: 0, alpha: 0.05);
 
   // 文本颜色
   static const Color textPrimary = Color(0xFF111827);
