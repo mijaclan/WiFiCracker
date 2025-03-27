@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:io';
-import 'models/wifi_model.dart';
-import 'utils/toast_util.dart';
-import 'utils/file_util.dart';
-import 'resources/app_colors.dart';
-import 'resources/app_styles.dart';
-import 'resources/app_icons.dart';
-import 'resources/app_images.dart';
+import '../../models/wifi_model.dart';
+import '../../utils/toast_util.dart';
+import '../../utils/file_util.dart';
+import '../../resources/app_colors.dart';
+import '../../resources/app_styles.dart';
+import '../../resources/app_icons.dart';
+import '../../resources/app_images.dart';
 import 'package:file_picker/file_picker.dart';
 
 class DictionaryPage extends StatefulWidget {

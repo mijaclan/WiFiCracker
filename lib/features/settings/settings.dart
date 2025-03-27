@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
-import 'utils/toast_util.dart';
-import 'resources/app_colors.dart';
-import 'resources/app_styles.dart';
-import 'resources/app_icons.dart';
+import '../../utils/toast_util.dart';
+import '../../resources/app_colors.dart';
+import '../../resources/app_styles.dart';
+import '../../resources/app_icons.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart';
 

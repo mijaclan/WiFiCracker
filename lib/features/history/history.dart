@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'models/wifi_model.dart';
-import 'utils/toast_util.dart';
-import 'utils/history_util.dart';
-import 'resources/app_colors.dart';
-import 'resources/app_styles.dart';
-import 'resources/app_icons.dart';
-import 'resources/app_images.dart';
+import '../../models/wifi_model.dart';
+import '../../utils/toast_util.dart';
+import '../../utils/history_util.dart';
+import '../../resources/app_colors.dart';
+import '../../resources/app_styles.dart';
+import '../../resources/app_icons.dart';
+import '../../resources/app_images.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});

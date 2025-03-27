@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import 'models/wifi_model.dart';
-import 'utils/toast_util.dart';
-import 'utils/file_util.dart'; // 添加FileUtil导入
-import 'utils/wifi_util.dart'; // 添加WiFiUtil导入
-import 'utils/history_util.dart'; // 添加HistoryUtil导入
-import 'resources/app_colors.dart';
-import 'resources/app_styles.dart';
-import 'resources/app_icons.dart';
-import 'resources/app_images.dart';
-import 'widgets/app_logo.dart'; // 添加AppLogo组件
-import 'main.dart'; // 导入main.dart以使用navigateToTab函数
-import './settings.dart';
-import 'package:wifi_iot/wifi_iot.dart'; // 导入WiFi管理包
-import 'dart:async'; // 导入异步支持
-import 'dart:io'; // 导入文件相关包
-import 'dart:convert'; // 导入JSON相关包
+import '../../models/wifi_model.dart';
+import '../../utils/toast_util.dart';
+import '../../utils/file_util.dart';
+import '../../utils/wifi_util.dart';
+import '../../utils/history_util.dart';
+import '../../resources/app_colors.dart';
+import '../../resources/app_styles.dart';
+import '../../resources/app_icons.dart';
+import '../../resources/app_images.dart';
+import '../../widgets/app_logo.dart';
+import '../../main.dart';
+import '../settings/settings.dart';
+import 'package:wifi_iot/wifi_iot.dart';
+import 'dart:async';
+import 'dart:io';
+import 'dart:convert';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
