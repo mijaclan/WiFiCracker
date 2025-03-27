@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFiCracker 启动背景图设计方案</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        .splash-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        .splash-option {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            width: 300px;
+            text-align: center;
+        }
+        .splash-preview {
+            width: 180px;
+            height: 320px;
+            margin: 0 auto;
+            display: block;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        .splash-description {
+            margin-top: 15px;
+            color: #555;
+            text-align: left;
+        }
+        .device-frame {
+            position: relative;
+            width: 180px;
+            height: 320px;
+            background-color: #000;
+            border-radius: 20px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>WiFiCracker 启动背景图设计方案 - 活力专业版</h1>
+    
+    <div class="splash-container">
+        <!-- 方案1: 活力网络扩散 -->
+        <div class="splash-option">
+            <h2>活力网络扩散</h2>
+            <div class="device-frame">
+                <svg class="splash-preview" viewBox="0 0 360 640" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="dynamic-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#4a90e2"/>
+                            <stop offset="100%" style="stop-color:#2980b9"/>
+                        </linearGradient>
+                        
+                        <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#3498db"/>
+                            <stop offset="100%" style="stop-color:#2980b9"/>
+                        </linearGradient>
+                        
+                        <filter id="soft-glow">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    
+                    <!-- 渐变背景 -->
+                    <rect width="360" height="640" fill="url(#dynamic-bg)"/>
+                    
+                    <!-- 动态网络扩散线 -->
+                    <g opacity="0.1">
+                        <circle cx="180" cy="320" r="50" stroke="white" stroke-width="1" fill="none"/>
+                        <circle cx="180" cy="320" r="100" stroke="white" stroke-width="1" fill="none"/>
+                        <circle cx="180" cy="320" r="150" stroke="white" stroke-width="1" fill="none"/>
+                        <circle cx="180" cy="320" r="200" stroke="white" stroke-width="1" fill="none"/>
+                        <circle cx="180" cy="320" r="250" stroke="white" stroke-width="1" fill="none"/>
+                    </g>
+                    
+                    <!-- 发散线 -->
+                    <g opacity="0.2">
+                        <line x1="180" y1="320" x2="50" y2="100" stroke="white" stroke-width="1"/>
+                        <line x1="180" y1="320" x2="310" y2="100" stroke="white" stroke-width="1"/>
+                        <line x1="180" y1="320" x2="50" y2="540" stroke="white" stroke-width="1"/>
+                        <line x1="180" y1="320" x2="310" y2="540" stroke="white" stroke-width="1"/>
+                    </g>
+                    
+                    <!-- 中央Logo -->
+                    <g transform="translate(130, 226) scale(1)">
+                        <polygon points="50,10 85,30 85,70 50,90 15,70 15,30" 
+                            fill="url(#logo-grad)" filter="url(#soft-glow)"/>
+                        
+                        <!-- WiFi图标 -->
+                        <g filter="url(#soft-glow)">
+                            <circle cx="50" cy="65" r="4" fill="white"/>
+                            <path d="M37,53 C37,43 43,35 50,35 C57,35 63,43 63,53" 
+                                fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M30,45 C30,30 40,25 50,25 C60,25 70,30 70,45" 
+                                fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                        </g>
+                    </g>
+                </svg>
+            </div>
+            <div class="splash-description">
+                <p>动态网络扩散效果，多层同心圆和发散线营造出开放、活力的氛围。蓝色渐变背景体现年轻与专业，中央Logo清晰突出，整体设计充满活力与创造性。</p>
+            </div>
+        </div>
+
+        <!-- 方案2: 科技光晕 -->
+        <div class="splash-option">
+            <h2>科技光晕</h2>
+            <div class="device-frame">
+                <svg class="splash-preview" viewBox="0 0 360 640" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <radialGradient id="tech-radial-bg" cx="50%" cy="50%" r="70%" fx="50%" fy="50%">
+                            <stop offset="0%" style="stop-color:#4a90e2; stop-opacity: 1"/>
+                            <stop offset="100%" style="stop-color:#2980b9; stop-opacity: 0.8"/>
+                        </radialGradient>
+                        
+                        <linearGradient id="logo-tech-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#3498db"/>
+                            <stop offset="100%" style="stop-color:#2980b9"/>
+                        </linearGradient>
+                        
+                        <filter id="tech-glow">
+                            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    
+                    <!-- 径向渐变背景 -->
+                    <rect width="360" height="640" fill="url(#tech-radial-bg)"/>
+                    
+                    <!-- 科技光晕 -->
+                    <g opacity="0.1">
+                        <circle cx="180" cy="320" r="200" fill="white"/>
+                        <circle cx="180" cy="320" r="150" fill="white"/>
+                        <circle cx="180" cy="320" r="100" fill="white"/>
+                    </g>
+                    
+                    <!-- 光线网格 -->
+                    <g opacity="0.1">
+                        <line x1="0" y1="200" x2="360" y2="200" stroke="white" stroke-width="1" stroke-dasharray="5,5"/>
+                        <line x1="0" y1="440" x2="360" y2="440" stroke="white" stroke-width="1" stroke-dasharray="5,5"/>
+                        <line x1="120" y1="0" x2="120" y2="640" stroke="white" stroke-width="1" stroke-dasharray="5,5"/>
+                        <line x1="240" y1="0" x2="240" y2="640" stroke="white" stroke-width="1" stroke-dasharray="5,5"/>
+                    </g>
+                    
+                    <!-- 中央Logo -->
+                    <g transform="translate(130, 226) scale(1)">
+                        <polygon points="50,10 85,30 85,70 50,90 15,70 15,30" 
+                            fill="url(#logo-tech-grad)" filter="url(#tech-glow)"/>
+                        
+                        <!-- WiFi图标 -->
+                        <g filter="url(#tech-glow)">
+                            <circle cx="50" cy="65" r="4" fill="white"/>
+                            <path d="M37,53 C37,43 43,35 50,35 C57,35 63,43 63,53" 
+                                fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M30,45 C30,30 40,25 50,25 C60,25 70,30 70,45" 
+                                fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                        </g>
+                    </g>
+                </svg>
+            </div>
+            <div class="splash-description">
+                <p>科技感十足的径向光晕背景，光线网格和同心圆突显专业和创新。蓝色渐变色调年轻而不失严谨，中央Logo清晰突出，整体设计传递开放、活力的技术氛围。</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="360" height="640" viewBox="0 0 360 640" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="dynamic-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#4a90e2"/>
+            <stop offset="100%" style="stop-color:#2980b9"/>
+        </linearGradient>
+        
+        <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#3498db"/>
+            <stop offset="100%" style="stop-color:#2980b9"/>
+        </linearGradient>
+        
+        <filter id="soft-glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+    </defs>
+    
+    <!-- 渐变背景 -->
+    <rect width="360" height="640" fill="url(#dynamic-bg)"/>
+    
+    <!-- 动态网络扩散线 -->
+    <g opacity="0.1">
+        <circle cx="180" cy="320" r="50" stroke="white" stroke-width="1" fill="none"/>
+        <circle cx="180" cy="320" r="100" stroke="white" stroke-width="1" fill="none"/>
+        <circle cx="180" cy="320" r="150" stroke="white" stroke-width="1" fill="none"/>
+        <circle cx="180" cy="320" r="200" stroke="white" stroke-width="1" fill="none"/>
+        <circle cx="180" cy="320" r="250" stroke="white" stroke-width="1" fill="none"/>
+    </g>
+    
+    <!-- 发散线 -->
+    <g opacity="0.2">
+        <line x1="180" y1="320" x2="50" y2="100" stroke="white" stroke-width="1"/>
+        <line x1="180" y1="320" x2="310" y2="100" stroke="white" stroke-width="1"/>
+        <line x1="180" y1="320" x2="50" y2="540" stroke="white" stroke-width="1"/>
+        <line x1="180" y1="320" x2="310" y2="540" stroke="white" stroke-width="1"/>
+    </g>
+    
+    <!-- 中央Logo -->
+    <g transform="translate(130, 226) scale(1)">
+        <polygon points="50,10 85,30 85,70 50,90 15,70 15,30" 
+            fill="url(#logo-grad)" filter="url(#soft-glow)"/>
+        
+        <!-- WiFi图标 -->
+        <g filter="url(#soft-glow)">
+            <circle cx="50" cy="65" r="4" fill="white"/>
+            <path d="M37,53 C37,43 43,35 50,35 C57,35 63,43 63,53" 
+                fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+            <path d="M30,45 C30,30 40,25 50,25 C60,25 70,30 70,45" 
+                fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+        </g>
+    </g>
+</svg> 

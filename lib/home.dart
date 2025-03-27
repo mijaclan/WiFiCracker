@@ -7,6 +7,8 @@ import 'utils/history_util.dart'; // 添加HistoryUtil导入
 import 'resources/app_colors.dart';
 import 'resources/app_styles.dart';
 import 'resources/app_icons.dart';
+import 'resources/app_images.dart';
+import 'widgets/app_logo.dart'; // 添加AppLogo组件
 import 'main.dart'; // 导入main.dart以使用navigateToTab函数
 import './settings.dart';
 import 'package:wifi_iot/wifi_iot.dart'; // 导入WiFi管理包

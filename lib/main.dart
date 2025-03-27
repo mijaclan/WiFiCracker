@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:io' show Platform;
+import 'package:flutter_svg/flutter_svg.dart';
+import 'dart:ui' as ui;
 import 'home.dart';
 import 'dictionary.dart';
 import 'history.dart';
 import 'settings.dart';
 import 'resources/app_colors.dart';
+import 'resources/app_images.dart';
 import 'utils/file_util.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,6 +41,7 @@ class _MyAppState extends State<MyApp> {
   int _retryCount = 0;
   static const int maxRetries = 3;
   static const String _permissionCheckedKey = 'permission_checked';
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -61,6 +65,14 @@ class _MyAppState extends State<MyApp> {
       if (_showInitError) {
         setState(() {
           _showInitError = false;
+        });
+      }
+
+      // 延迟2秒后关闭启动画面
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
         });
       }
     } catch (e) {
@@ -113,8 +125,104 @@ class _MyAppState extends State<MyApp> {
           });
         }
 
-        return MainScreen(key: mainScreenKey);
+        return _isLoading
+            ? const SplashScreen()
+            : MainScreen(key: mainScreenKey);
       }),
+    );
+  }
+}
+
+class SplashScreen extends StatelessWidget {
+  const SplashScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // 获取屏幕尺寸
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    // 创建安全的内边距
+    final padding = MediaQuery.of(context).padding;
+    final safeHeight = height - padding.top - padding.bottom;
+
+    // 考虑不同设备屏幕比例
+    final aspectRatio = width / height;
+
+    // 根据不同设备进行调整
+    // iPhone比例通常是9:19.5
+    // Android设备则更多样化
+    double logoScale = 1.0;
+
+    // 根据屏幕尺寸调整缩放比例
+    if (width < 375) {
+      // 较小的设备如iPhone SE
+      logoScale = 0.85;
+    } else if (width > 428) {
+      // 大尺寸设备如iPhone 15 Pro Max
+      logoScale = 1.15;
+    }
+
+    // 处理Android 6.0的兼容性问题
+    Widget svgWidget;
+    try {
+      svgWidget = SvgPicture.asset(
+        AppImages.wifiBackground,
+        fit: BoxFit.cover,
+        width: width,
+        height: height,
+      );
+    } catch (e) {
+      // 如果SVG渲染失败，使用简单的颜色背景代替
+      print('SVG渲染失败，使用备用方案: $e');
+      svgWidget = Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF4a90e2),
+              Color(0xFF2980b9),
+            ],
+          ),
+        ),
+        child: Center(
+          child: Transform.scale(
+            scale: logoScale,
+            child: SvgPicture.asset(
+              AppImages.wifiLogo,
+              width: 100,
+              height: 100,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          // 背景
+          svgWidget,
+
+          // 中央logo - 如果背景SVG中没有logo，则可以在这里添加
+          if (Platform.isAndroid && Platform.version.startsWith('6.'))
+            Center(
+              child: Transform.scale(
+                scale: logoScale,
+                child: SvgPicture.asset(
+                  AppImages.wifiLogo,
+                  width: 100,
+                  height: 100,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
