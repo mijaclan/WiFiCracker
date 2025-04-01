@@ -12,19 +12,71 @@ class WiFiUtil {
   // 连接到WiFi网络
   static Future<bool> connectToWiFi(String ssid, String password) async {
     try {
-      bool success = await WiFiForIoTPlugin.connect(
-        ssid,
-        password: password,
-        security: NetworkSecurity.WPA,
-      );
+      // 在连接前，为Android平台采用特殊策略防止系统弹窗
+      if (Platform.isAndroid) {
+        try {
+          // 实现重试机制，最多尝试2次
+          bool success = false;
+          int maxRetries = 2;
+          int retryCount = 0;
 
-      if (success) {
-        print('成功连接到WiFi: $ssid');
+          while (!success && retryCount < maxRetries) {
+            try {
+              // 尝试连接，但调整参数以减少系统弹窗
+              success = await WiFiForIoTPlugin.connect(
+                ssid,
+                password: password,
+                security: NetworkSecurity.WPA,
+                withInternet: false, // 不检查互联网连接，避免额外弹窗
+                joinOnce: true, // 只尝试连接一次
+              );
+
+              if (success) {
+                print('成功连接到WiFi: $ssid');
+                return true;
+              } else {
+                print('连接WiFi失败 (尝试 ${retryCount + 1}/${maxRetries}): $ssid');
+
+                // 连接失败时立即断开连接，避免系统弹窗
+                try {
+                  await WiFiForIoTPlugin.disconnect();
+                } catch (e) {
+                  print('断开连接时出错: $e');
+                }
+
+                // 短暂延迟后重试
+                if (retryCount < maxRetries - 1) {
+                  await Future.delayed(const Duration(milliseconds: 300));
+                }
+              }
+            } catch (e) {
+              print('连接WiFi时出错 (尝试 ${retryCount + 1}/${maxRetries}): $e');
+            }
+
+            retryCount++;
+          }
+
+          return success;
+        } catch (e) {
+          print('Android平台连接WiFi时出错: $e');
+          return false;
+        }
       } else {
-        print('连接WiFi失败: $ssid');
-      }
+        // 其他平台使用原有逻辑
+        bool success = await WiFiForIoTPlugin.connect(
+          ssid,
+          password: password,
+          security: NetworkSecurity.WPA,
+        );
 
-      return success;
+        if (success) {
+          print('成功连接到WiFi: $ssid');
+        } else {
+          print('连接WiFi失败: $ssid');
+        }
+
+        return success;
+      }
     } catch (e) {
       print('连接WiFi时出错: $e');
       return false;

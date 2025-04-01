@@ -342,8 +342,10 @@ class _HistoryPageState extends State<HistoryPage> {
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     width: 48,
@@ -382,6 +384,8 @@ class _HistoryPageState extends State<HistoryPage> {
                         Text(
                           history.ssid,
                           style: AppStyles.title,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -390,6 +394,8 @@ class _HistoryPageState extends State<HistoryPage> {
                             color: AppColors.gray,
                             fontSize: 14,
                           ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ],
                     ),
@@ -397,80 +403,91 @@ class _HistoryPageState extends State<HistoryPage> {
                 ],
               ),
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  if (history.bssid != null)
-                    _buildInfoChip(
-                      icon: AppIcons.router,
-                      label: history.bssid!,
-                    ),
-                  if (history.channel != null)
-                    _buildInfoChip(
-                      icon: AppIcons.signal,
-                      label: 'CH${history.channel}',
-                    ),
-                  _buildInfoChip(
-                    icon: null,
-                    label: history.encryptionType,
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primary.withValues(
-                              red: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .r
-                                  .toDouble(),
-                              green: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .g
-                                  .toDouble(),
-                              blue: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .b
-                                  .toDouble(),
-                              alpha: 0.1,
+              LayoutBuilder(builder: (context, constraints) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        alignment: WrapAlignment.start,
+                        children: [
+                          if (history.bssid != null)
+                            _buildInfoChip(
+                              icon: AppIcons.router,
+                              label: history.bssid!,
                             ),
-                    textColor: Theme.of(context).colorScheme.primary,
-                  ),
-                  _buildInfoChip(
-                    icon: AppIcons.history,
-                    label: _formatDate(history.crackTime),
-                  ),
-                  const Spacer(),
-                  if (!_selectedIndices.isNotEmpty)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          constraints: const BoxConstraints(),
-                          padding: EdgeInsets.zero,
-                          icon: Icon(
-                            AppIcons.copy,
-                            size: 20,
-                            color: AppColors.gray,
+                          if (history.channel != null)
+                            _buildInfoChip(
+                              icon: AppIcons.signal,
+                              label: 'CH${history.channel}',
+                            ),
+                          _buildInfoChip(
+                            icon: null,
+                            label: history.encryptionType,
+                            backgroundColor: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(
+                                  red: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .r
+                                      .toDouble(),
+                                  green: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .g
+                                      .toDouble(),
+                                  blue: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .b
+                                      .toDouble(),
+                                  alpha: 0.1,
+                                ),
+                            textColor: Theme.of(context).colorScheme.primary,
                           ),
-                          onPressed: () => _copyPassword(history),
-                          tooltip: '复制密码',
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          constraints: const BoxConstraints(),
-                          padding: EdgeInsets.zero,
-                          icon: Icon(
-                            AppIcons.delete,
-                            size: 20,
-                            color: AppColors.gray,
+                          _buildInfoChip(
+                            icon: AppIcons.history,
+                            label: _formatDate(history.crackTime),
                           ),
-                          onPressed: () => _deleteHistory(index),
-                          tooltip: '删除记录',
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                ],
-              ),
+                    if (!_selectedIndices.isNotEmpty)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                            icon: Icon(
+                              AppIcons.copy,
+                              size: 20,
+                              color: AppColors.gray,
+                            ),
+                            onPressed: () => _copyPassword(history),
+                            tooltip: '复制密码',
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                            icon: Icon(
+                              AppIcons.delete,
+                              size: 20,
+                              color: AppColors.gray,
+                            ),
+                            onPressed: () => _deleteHistory(index),
+                            tooltip: '删除记录',
+                          ),
+                        ],
+                      ),
+                  ],
+                );
+              }),
             ],
           ),
         ),

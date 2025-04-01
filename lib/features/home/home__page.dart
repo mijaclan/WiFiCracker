@@ -521,10 +521,43 @@ class _HomePageState extends State<HomePage> {
             _currentPassword = ""; // 清空当前密码
           });
           return;
+        } else {
+          // 连接失败但不弹出系统对话框，只在应用内显示状态
+          print('密码尝试失败: $password');
+
+          // 更新UI显示尝试结果
+          setState(() {
+            _crackingStatus = CrackingStatus(
+              wifiName: network.name,
+              dictionaryName: _crackingStatus.dictionaryName,
+              dictionarySize: _crackingStatus.dictionarySize,
+              estimatedTime:
+                  _calculateEstimatedTime(totalCount, _currentCrackLine),
+              currentProgress: "密码错误: $password - 继续尝试下一个",
+              progressPercent: _currentCrackLine / totalCount,
+            );
+          });
         }
 
         // 添加延迟以避免过快尝试
-        await Future.delayed(const Duration(milliseconds: 100));
+        await Future.delayed(const Duration(milliseconds: 300));
+
+        // 每尝试50个密码更新一次UI，显示仍在进行中
+        if (_currentCrackLine % 50 == 0) {
+          setState(() {
+            _crackingStatus = CrackingStatus(
+              wifiName: network.name,
+              dictionaryName: _crackingStatus.dictionaryName,
+              dictionarySize: _crackingStatus.dictionarySize,
+              estimatedTime:
+                  _calculateEstimatedTime(totalCount, _currentCrackLine),
+              currentProgress: "正在尝试第${_currentCrackLine}个密码，共$totalCount个",
+              progressPercent: _currentCrackLine / totalCount,
+            );
+          });
+          // 让UI有时间更新
+          await Future.delayed(const Duration(milliseconds: 100));
+        }
       }
 
       // 如果遍历完所有密码都没有成功
@@ -638,7 +671,7 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
-      showModalBottomSheet(
+      await showModalBottomSheet(
         context: context,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -651,8 +684,8 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  children: [
-                    Icon(AppIcons.book, color: AppColors.primary),
+                  children: <Widget>[
+                    const Icon(AppIcons.book, color: AppColors.primary),
                     const SizedBox(width: 8),
                     const Text(
                       '选择字典',
@@ -734,7 +767,7 @@ class _HomePageState extends State<HomePage> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(AppIcons.wifi, color: Colors.white),
+            const Icon(AppIcons.wifi, color: Colors.white),
             const SizedBox(width: 8),
             const Text('WiFi Cracker', style: TextStyle(color: Colors.white)),
           ],
@@ -1076,7 +1109,7 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Center(
           child: Column(
-            children: [
+            children: <Widget>[
               Icon(
                 AppIcons.router,
                 size: 48,
